@@ -1,0 +1,80 @@
+#!/usr/bin/env node
+
+const prompts = require("prompts");
+const execSync = require("child_process").execSync;
+
+async function userInput() {
+  try {
+    const responses = await prompts([
+      {
+        type: "select",
+        name: "type",
+        message: "Is this a bug or a feature?",
+        choices: [
+          { title: "Bug", value: "bugfix" },
+          { title: "Feature", value: "feature" },
+        ],
+        initial: 0,
+      },
+      {
+        type: "number",
+        name: "ticketNumber",
+        message: "Enter the ticket number:",
+        validate: (value) =>
+          value > 0 ? true : "Ticket number must be a positive number.",
+      },
+      {
+        type: "text",
+        name: "name",
+        message: "Enter the name:",
+        validate: (value) =>
+          value.trim() !== "" ? true : "Name cannot be empty.",
+      },
+    ]);
+
+    if (!responses.type || !responses.ticketNumber || !responses.name) {
+      console.log("Operation cancelled or invalid input provided.");
+      return;
+    }
+
+    const name = responses.name
+      .replace(/ /g, "_")
+      .replace(/ä/g, "ae")
+      .replace(/ö/, "oe")
+      .replace(/ü/, "ue")
+      .replace(/ß/, "ss")
+      .replace(/Ä/g, "Ae")
+      .replace(/Ö/, "Oe")
+      .replace(/Ü/, "Ue")
+      .replace(/[^a-zA-Z0-9_]/g, "")
+      .toLowerCase();
+
+    return {
+      type: responses.type,
+      ticketNumber: responses.ticketNumber,
+      name,
+    };
+  } catch (error) {
+    console.error("An error occurred:", error);
+    process.exit(1);
+  }
+}
+
+async function main() {
+  console.log("hi");
+  const input = await userInput();
+
+  if (!input) {
+    return;
+  }
+  
+  execSync("git fetch")
+  execSync("git checkout main");
+  execSync("git pull")
+  execSync(
+    "git switch -c " + input.type + "/DM-" + input.ticketNumber + "_" + input.name,
+    { stdio: "inherit" },
+  );
+}
+
+ main();
